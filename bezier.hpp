@@ -1,6 +1,7 @@
 #include <vector>
 #include <cmath>
 #include <algorithm>
+#include <functional>
 using namespace std;
 
 
@@ -20,13 +21,26 @@ public:
 	}
 
 	//how do I do this, in haskell it'd be  :: T -> T 
-	template<typename Func>
-	void jiggle(Func wiggle ) 
+	template<typename Functor>
+	void jiggle(Functor wiggle ) 
 	{
-		transform( m_ctrl.begin(), m_ctrl.end(), m_ctrl.begin(), wiggle );
+		for(auto & i : m_ctrl)
+		{
+			i = wiggle(i);
+		}
+	}
+	int length(){
+		return m_ctrl.size();
+	}
+	void typesafe_jiggle(std::function<T(T)> wiggle)
+	{
+		for(auto & i : m_ctrl)
+		{
+			i = wiggle(i);
+		}
 	}
 
-	T sample(float t)
+	T sample(float t) const
 	{
 		size_t start =0;
 
@@ -36,7 +50,7 @@ public:
 			double s = 0;
 			t = modf( t, & s );
 			start = ((size_t)s)*2;
-			if(start > m_ctrl.size())
+			if(start+2 > m_ctrl.size())
 			{
 				return T{};
 			}
