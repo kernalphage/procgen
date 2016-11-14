@@ -1,1 +1,3 @@
 *.o
+output_*.jpg
+output_*.png
