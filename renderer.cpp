@@ -12,6 +12,12 @@ using namespace std;
 using namespace png;
 using icomplex = complex<float>;
 
+//here there be globals, 'cause why not
+int steps = 2900;
+int width = 4096;
+int height = 2160;
+size_t num_pts = 180;
+	
 const float pi = std::acos(-1);
 namespace rando{
 	std::random_device rd;
@@ -118,15 +124,31 @@ png::image<png::rgb_pixel> tonemap(const int width, const int height, int max_va
 	}
 	return image;
 }
-
+void parse_args(int argc, char* argv[])
+{
+	cout<<"argc is " <<argc<<endl;
+	for(int i=0; i < argc; i++)
+	{
+		cout<<i<<endl;
+		auto cur = argv[i];
+		if(strcmp("-d", cur)==0)
+		{
+			width = atoi(argv[++i]);
+			height = atoi(argv[++i]);
+		}
+		else {
+			cout<<"Could not parse " <<cur<<endl;
+		}
+	}
+	cout<<"Finsihed!"<<endl;
+}
 
 int main(int ac, char* av[])
 {
-
-    	int steps = 29000;
-	int width = 4096;
-    	int height = 2160;
- 	size_t num_pts = 180;
+	cout<<"parsing args"<<endl;
+ 	parse_args(ac,av);
+	cout<<"Finished parsing..."<<endl;
+	printf("Rendering %dx%d image with size %zd \n", width, height, num_pts);
 	vector<icomplex> pts(num_pts);
 	float di = pi*2	 / (num_pts-2);
 	int i =0;
@@ -224,7 +246,7 @@ int main(int ac, char* av[])
 
 	std::cout << "finished computation at " << std::ctime(&end_time)
               << "elapsed time: " << elapsed_seconds.count() << "s\n";
-	const char*  fmt = "output_%h%d_%H-%M-%S.png";
+	const char*  fmt = "output/output_%h%d_%H-%M-%S.png";
 	char buf[80];
 	struct tm* timeinfo;
 	timeinfo = localtime(& end_time);
