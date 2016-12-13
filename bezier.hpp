@@ -31,7 +31,7 @@ public:
 			i = wiggle(i);
 		}
 	}
-	int size(){
+	int size() const{
 		return m_ctrl.size();
 	}
 	
@@ -43,7 +43,7 @@ public:
 		}
 	}
 
-	static float arc_length(const bezier< complex<float> > &b, size_t i)  
+	static float arc_length(const bezier< complex<float> > &b, size_t i) 
 	{
 		float len{};
 		if( i < 0 || (i + 2) > b.m_ctrl.size() ){

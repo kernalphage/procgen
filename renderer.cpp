@@ -69,7 +69,7 @@ bool oob(const T t,const T1 lower,const T2 upper)
 
 
 template <typename T>
-void render_spline(bezier<T> b, int width, int height, vector<int> &accumulator)
+void render_spline(const bezier<T> &b, int width, int height, vector<int> &accumulator)
 {
 	float ishwidth = height * .5f;
 	int curve_count = b.size() / 2 - 1;
