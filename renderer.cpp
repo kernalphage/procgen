@@ -13,19 +13,31 @@ using namespace png;
 using icomplex = complex<float>;
 
 //here there be globals, 'cause why not
-int steps = 2900;
+int g_iterations = 2900;
 int width = 4096;
 int height = 2160;
 size_t num_pts = 180;
-	
+long g_seed = 0;
+float g_supersample = 1.5f;
+
 const float pi = std::acos(-1);
 namespace rando{
-	std::random_device rd;
-    std::mt19937 gen(rd());
- 
+    std::random_device rd;
+    std::mt19937 gen;
     std::weibull_distribution<> d{1,1.5};
     std::uniform_real_distribution<float> u{0.0f,2*pi};
     std::uniform_real_distribution<float> out{-1,1.0f};
+
+    template< class Sseq > 
+    Sseq init_rand(Sseq seed)
+    {
+	if(seed == 0)
+	{
+		seed = rd();
+	}
+	gen.seed(seed);
+	return seed;
+    }
     float next_smooth()
     {
     	return d(gen);
@@ -58,19 +70,27 @@ template <typename T>
 void render_spline(bezier<T> b, int width, int height, vector<int> &accumulator)
 {
 	float ishwidth = height * .5f;
-	
-	for(float i=0; i < b.size() / 2 - 1; i+=1/500.0)
+	int curve_count = b.size() / 2 - 1;
+
+	for(int i=0; i < curve_count; i++)
 	{
-		icomplex j = b.sample(i);
-		int ex = (int) (j.real() * ishwidth + width/2);
-		int wy = (int) (j.imag() * ishwidth + height/2);
-
-		if(oob (ex, 0, width-1) || oob(wy, 0, height-1) )
+		// for each (0,1) curve, plot one per pixel
+		float curve_len = bezier<icomplex>::arc_length(b, i);
+		int pixels_in_curve = curve_len * ishwidth * g_supersample; 
+		float dt = 1.0f / pixels_in_curve;  // might need fudge
+		for(float t= 0; t < 1; t += dt)
 		{
-			continue;
-		}
+			icomplex j = b.sample(i+t);
+			int ex = (int) (j.real() * ishwidth + width/2);
+			int wy = (int) (j.imag() * ishwidth + height/2);
 
-		accumulator[ex + wy * width]++;
+			if(oob (ex, 0, width-1) || oob(wy, 0, height-1) )
+			{
+				continue;
+			}
+
+			accumulator[ex + wy * width]++;
+		}
 	}
 }
 
@@ -129,12 +149,19 @@ void parse_args(int argc, char* argv[])
 	cout<<"argc is " <<argc<<endl;
 	for(int i=0; i < argc; i++)
 	{
-		cout<<i<<endl;
 		auto cur = argv[i];
 		if(strcmp("-d", cur)==0)
 		{
 			width = atoi(argv[++i]);
 			height = atoi(argv[++i]);
+		}
+		else if(strcmp("-s", cur)==0)
+		{
+			g_seed = atol(argv[++i]);
+		}
+		else if(strcmp("-i", cur)==0)
+		{
+			g_iterations = atoi(argv[++i]);
 		}
 		else {
 			cout<<"Could not parse " <<cur<<endl;
@@ -147,14 +174,16 @@ int main(int ac, char* av[])
 {
 	cout<<"parsing args"<<endl;
  	parse_args(ac,av);
+	g_seed = rando::init_rand(g_seed);
 	cout<<"Finished parsing..."<<endl;
+	cout<<"Seeding with " << g_seed<<endl;
 	printf("Rendering %dx%d image with size %zd \n", width, height, num_pts);
 	vector<icomplex> pts(num_pts);
 	float di = pi*2	 / (num_pts-2);
 	int i =0;
 	auto circular = [&]{
 		float theta = di * i++;
-		return icomplex(sin( theta), cos(theta));
+		return icomplex(sin(theta), cos(theta))*.8f;
 	};
 
 
@@ -162,7 +191,7 @@ int main(int ac, char* av[])
 	auto linear = [&]{
 		return icomplex( i++ * di_linear - 2.0f, 0);
 	};
-	std::generate(pts.begin(), pts.end(), linear);
+	std::generate(pts.begin(), pts.end(), circular);
 
 	auto jiggle_height = [](icomplex i){
 		float height = 1 - (i.imag() + 1) / 2.0f + .0001;
@@ -171,7 +200,7 @@ int main(int ac, char* av[])
 	};
 
 
-	float movescale = .029f;
+	float movescale = .1;//.029f;
 	float base_energy = .25f;
 	auto smoke_rise = [=](icomplex i){
 		//float dist = abs(norm(i) - 1.0f) + .2f;
@@ -187,6 +216,7 @@ int main(int ac, char* av[])
 		return i + dp;
 	};
     bezier<icomplex> b = bezier<icomplex>( pts );
+
    ////Rendering begins
    //
     std::chrono::time_point<std::chrono::system_clock> start,end;
@@ -194,12 +224,17 @@ int main(int ac, char* av[])
 
    vector<int> accumulator(width*height, 0);
 
-	cout<<"[";
+	cout<<"["; cout.flush();
+	int stepsize = max(1, (g_iterations / 100));
 	///// Simulation phase
-	for(int i=0; i < steps; i++)
+	for(int i=0; i < g_iterations; i++)
 	{
 		render_spline(b, width, height, accumulator);
 		b.jiggle(center_out);
+		if( (i % stepsize)  == 0)
+		{
+			cout<<"#"; cout.flush();
+		} 
 	}
 	cout<<"]"<<endl;
     
@@ -237,7 +272,8 @@ int main(int ac, char* av[])
 		{0.f, 0.f, 0.f}
 	};
 
-	auto image = tonemap(width, height, steps, .85f,accumulator,  inspiration );
+	auto max_val = 0;
+	auto image = tonemap(width, height, g_iterations, .85f,accumulator,  inspiration );
 
 	end = std::chrono::system_clock::now();
 
@@ -252,4 +288,10 @@ int main(int ac, char* av[])
 	timeinfo = localtime(& end_time);
 	strftime(buf, 80, fmt, timeinfo);
 	image.write(buf);
+
+	// Log params
+	FILE* fp = fopen("output/log.txt", "a");
+	fprintf(fp, "%s|%d|%d|%ld|%d|%d|%f\n",buf,width,height,g_seed,g_iterations, (int) num_pts, elapsed_seconds.count() );
+	fflush(fp);
+	fclose(fp);
 }
