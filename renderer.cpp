@@ -17,7 +17,7 @@ using icomplex = complex<float>;
 int g_iterations = 2900;
 int width = 4096;
 int height = 2160;
-size_t num_pts = 180;
+size_t g_num_pts = 180;
 long g_seed = 0;
 float g_supersample = 1.5f;
 float g_gamma = .85f;
@@ -170,6 +170,10 @@ void parse_args(int argc, char* argv[])
 		{
 			g_gamma = atof(argv[++i]);
 		}
+		else if(strcmp("-p", cur)==0)
+		{
+			g_num_pts = atoi(argv[++i]);
+		}
 		else {
 			cout<<"Could not parse " <<cur<<endl;
 		}
@@ -184,9 +188,9 @@ int main(int ac, char* av[])
 	g_seed = rando::init_rand(g_seed);
 	cout<<"Finished parsing..."<<endl;
 	cout<<"Seeding with " << g_seed<<endl;
-	printf("Rendering %dx%d image with size %zd \n", width, height, num_pts);
-	vector<icomplex> pts(num_pts);
-	float di = pi*2	 / (num_pts-2);
+	printf("Rendering %dx%d image with size %zd \n", width, height, g_num_pts);
+	vector<icomplex> pts(g_num_pts);
+	float di = pi*2	 / (g_num_pts-2);
 	int i =0;
 	auto circular = [&]{
 		float theta = di * i++;
@@ -194,7 +198,7 @@ int main(int ac, char* av[])
 	};
 
 
-	float di_linear = 4.0f/(num_pts-2);
+	float di_linear = 4.0f/(g_num_pts-2);
 	auto linear = [&]{
 		return icomplex( i++ * di_linear - 2.0f, 0);
 	};
@@ -237,7 +241,7 @@ int main(int ac, char* av[])
 	for(int i=0; i < g_iterations; i++)
 	{
 		render_spline(b, width, height, accumulator);
-		b.jiggle(center_out);
+		b.jiggle(jiggle_height);
 		if( (i % stepsize)  == 0)
 		{
 			cout<<"#"; cout.flush();
@@ -299,7 +303,7 @@ int main(int ac, char* av[])
 
 	// Log params
 	FILE* fp = fopen("output/log.txt", "a");
-	fprintf(fp, "%s|%d|%d|%ld|%d|%d|%f|%f\n",buf,width,height,g_seed,g_iterations,(int)num_pts,g_gamma, elapsed_seconds.count() );
+	fprintf(fp, "%s|%d|%d|%ld|%d|%d|%f|%f\n",buf,width,height,g_seed,g_iterations,(int)g_num_pts,g_gamma, elapsed_seconds.count() );
 	fflush(fp);
 	fclose(fp);
 }
