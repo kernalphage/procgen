@@ -9,6 +9,7 @@
 #include "png++/png.hpp"
 #include "bezier.hpp"
 #include "fcolor.hpp"
+#include "helper.hpp"
 using namespace std;
 using namespace png;
 using icomplex = complex<float>;
@@ -301,10 +302,11 @@ int main(int ac, char* av[])
 	strftime(buf, 80, fmt, timeinfo);
 	image.write(buf);
 
-	// Log params
-	FILE* fp = fopen("output/log.txt", "a");
-	fprintf(fp, "%s|%d|%d|%ld|%d|%d|%f|%f\n",buf,width,height,g_seed,g_iterations,(int)g_num_pts,g_gamma, elapsed_seconds.count() );
-	fflush(fp);
-	fclose(fp);
+    std::fstream log_handle;
+    log_handle.open("output/log.txt",ios::app|ios::out);
+
+	auto params = make_tuple(std::string(buf),width,height,g_seed,g_iterations,(int)g_num_pts,g_gamma, elapsed_seconds.count() );
+	helper::print_tuple(log_handle, params);
+	log_handle<<endl;
 }
 	
