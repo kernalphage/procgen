@@ -5,6 +5,7 @@
 #include <ctime>
 #include <iostream>
 #include <string>
+#include <algorithm>
 #include "png++/png.hpp"
 #include "bezier.hpp"
 #include "fcolor.hpp"
@@ -19,6 +20,7 @@ int height = 2160;
 size_t num_pts = 180;
 long g_seed = 0;
 float g_supersample = 1.5f;
+float g_gamma = .85f;
 
 const float pi = std::acos(-1);
 namespace rando{
@@ -94,6 +96,7 @@ void render_spline(bezier<T> b, int width, int height, vector<int> &accumulator)
 	}
 }
 
+
 void render_particle(int px, int py, const int width, const int height, vector<int>& accumulator){
 	const float damping = .8f;
 	const float accel = .001;
@@ -130,13 +133,13 @@ png::image<png::rgb_pixel> tonemap(const int width, const int height, int max_va
 
 	// HDR, with some fudge
 	float max_sample = max(colormap.size() / 2 - 1, 1);
-	float max_energy = log(max_val * gamma);
+	float max_energy = pow(max_val, gamma);
 	png::image<png::rgb_pixel> image(width, height);
 	for (size_t y = 0; y < image.get_height(); ++y)
 	 {
 	     for (size_t x = 0; x < image.get_width(); ++x)
 	     {
-	     	float energy = log(accumulator[x + y*width]) / max_energy;
+	     	float energy = pow(accumulator[x + y*width], gamma) / max_energy;
 
 	     	auto color = (png::rgb_pixel) colormap.sample(energy * max_sample);
 	     	image.set_pixel(x,y, color);
@@ -162,6 +165,10 @@ void parse_args(int argc, char* argv[])
 		else if(strcmp("-i", cur)==0)
 		{
 			g_iterations = atoi(argv[++i]);
+		}
+		else if(strcmp("-g", cur)==0)
+		{
+			g_gamma = atof(argv[++i]);
 		}
 		else {
 			cout<<"Could not parse " <<cur<<endl;
@@ -272,8 +279,9 @@ int main(int ac, char* av[])
 		{0.f, 0.f, 0.f}
 	};
 
-	auto max_val = 0;
-	auto image = tonemap(width, height, g_iterations, .85f,accumulator,  inspiration );
+	int max_val = *std::max_element(accumulator.begin(), accumulator.end());
+
+	auto image = tonemap(width, height, max_val, g_gamma,accumulator,  inspiration );
 
 	end = std::chrono::system_clock::now();
 
@@ -291,7 +299,8 @@ int main(int ac, char* av[])
 
 	// Log params
 	FILE* fp = fopen("output/log.txt", "a");
-	fprintf(fp, "%s|%d|%d|%ld|%d|%d|%f\n",buf,width,height,g_seed,g_iterations, (int) num_pts, elapsed_seconds.count() );
+	fprintf(fp, "%s|%d|%d|%ld|%d|%d|%f|%f\n",buf,width,height,g_seed,g_iterations,(int)num_pts,g_gamma, elapsed_seconds.count() );
 	fflush(fp);
 	fclose(fp);
 }
+	
