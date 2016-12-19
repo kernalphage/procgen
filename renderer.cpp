@@ -113,8 +113,7 @@ png::image<png::rgb_pixel> tonemap(const int width, const int height, int max_va
 }
 void parse_args(int argc, char* argv[])
 {
-	cout<<"argc is " <<argc<<endl;
-	for(int i=0; i < argc; i++)
+	for(int i=1; i < argc; i++)
 	{
 		auto cur = argv[i];
 		if(strcmp("-d", cur)==0)
@@ -142,15 +141,12 @@ void parse_args(int argc, char* argv[])
 			cout<<"Could not parse " <<cur<<endl;
 		}
 	}
-	cout<<"Finsihed!"<<endl;
 }
 
 int main(int ac, char* av[])
 {
-	cout<<"parsing args"<<endl;
  	parse_args(ac,av);
 	g_seed = rando::init_rand(g_seed);
-	cout<<"Finished parsing..."<<endl;
 	cout<<"Seeding with " << g_seed<<endl;
 	printf("Rendering %dx%d image with size %zd \n", width, height, g_num_pts);
 	vector<icomplex> pts(g_num_pts);
