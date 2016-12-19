@@ -1,12 +1,13 @@
 #include <chrono>
 #include <cmath>
-#include <cmath>
 #include <complex>
 #include <ctime>
 #include <iostream>
 #include <string>
 #include <algorithm>
 #include "png++/png.hpp"
+#include "rando.hpp"
+#include "movers.hpp"
 #include "bezier.hpp"
 #include "fcolor.hpp"
 #include "helper.hpp"
@@ -22,44 +23,6 @@ size_t g_num_pts = 180;
 long g_seed = 0;
 float g_supersample = 1.5f;
 float g_gamma = .85f;
-
-const float pi = std::acos(-1);
-namespace rando{
-    std::random_device rd;
-    std::mt19937 gen;
-    std::weibull_distribution<> d{1,1.5};
-    std::uniform_real_distribution<float> u{0.0f,2*pi};
-    std::uniform_real_distribution<float> out{-1,1.0f};
-
-    template< class Sseq > 
-    Sseq init_rand(Sseq seed)
-    {
-	if(seed == 0)
-	{
-		seed = rd();
-	}
-	gen.seed(seed);
-	return seed;
-    }
-    float next_smooth()
-    {
-    	return d(gen);
-    }
-    float next_unit()
-    {
-    	return u(gen);
-    }
-    float next_range()
-    {
-    	return out(gen);
-    }
-}
-
-template<typename T>
-auto lerper (T min, T max, int divisor)
-{ 
-	return [=](int t){float tt = ((float)t)/divisor; return (T)(min + (max-min)*tt) ;};
-}
 
 
 template<typename T, typename T1, typename T2> 
@@ -191,7 +154,7 @@ int main(int ac, char* av[])
 	cout<<"Seeding with " << g_seed<<endl;
 	printf("Rendering %dx%d image with size %zd \n", width, height, g_num_pts);
 	vector<icomplex> pts(g_num_pts);
-	float di = pi*2	 / (g_num_pts-2);
+	float di = rando::pi*2	 / (g_num_pts-2);
 	int i =0;
 	auto circular = [&]{
 		float theta = di * i++;
@@ -214,13 +177,7 @@ int main(int ac, char* av[])
 
 	float movescale = .1;//.029f;
 	float base_energy = .25f;
-	auto smoke_rise = [=](icomplex i){
-		//float dist = abs(norm(i) - 1.0f) + .2f;
-		float dist = log(abs(norm(i)-1) + 1) + base_energy;
-		icomplex dp = movescale * dist * icomplex(rando::next_range(), rando::next_range());
-		return i + dp;
-	};
-
+	auto smoke_rise = movers::smoke_rise(base_energy, movescale);
 	float falloff = 30.f;
 	auto center_out = [=](icomplex i){
 		float dist = 1/(falloff * abs(i.real())+1);
