@@ -1,7 +1,7 @@
 # procgen
 procedural generation project(s?)
 
-
+![Corona example](https://raw.githubusercontent.com/kernalphage/procgen/readme/corona.png)
 
 ## Dependencies
 
