@@ -2,7 +2,7 @@
 procedural generation project(s?)
 
 ![Corona example](examples/corona.png?raw=true "Corona")
-![Frosty example](examples/output_Dec13_14-43-05.png?raw=true "Frosty")
+![Frosty example](examples/frosty.png?raw=true "Frosty")
 
 ## Dependencies
 
