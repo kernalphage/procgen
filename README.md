@@ -1,12 +1,13 @@
 # procgen
 procedural generation project(s?)
 
-![Corona example](https://raw.githubusercontent.com/kernalphage/procgen/master/corona.png)
-![Frosty example](https://raw.githubusercontent.com/kernalphage/procgen/master/output_Dec13_14-43-05.png)
+![Corona example](examples/corona.png?raw=true "Corona")
+![Frosty example](examples/output_Dec13_14-43-05.png?raw=true "Frosty")
 
 ## Dependencies
 
 Currently, the only dependency is a c++14 compliant compiler and [png++](http://www.nongnu.org/pngpp/)
+
 ## TODO:
 
 Hardcode less things:
