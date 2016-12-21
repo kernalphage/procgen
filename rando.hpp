@@ -1,3 +1,4 @@
+#pragma once
 namespace rando{
 	
 const float pi = std::acos(-1);

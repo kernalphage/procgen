@@ -1,4 +1,6 @@
+#pragma once
 #include <cmath>
+
 namespace movers
 {
 	using icomplex = std::complex<float>;

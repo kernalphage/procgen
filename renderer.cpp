@@ -35,6 +35,8 @@ bool oob(const T t,const T1 lower,const T2 upper)
 template <typename T>
 void render_spline(const bezier<T> &b, int width, int height, vector<int> &accumulator)
 {
+	// map -1, 1 to width, height.
+	// TODO: worry about aspect ratio
 	float ishwidth = height * .5f;
 	int curve_count = b.size() / 2 - 1;
 
@@ -89,14 +91,12 @@ void render_particle(int px, int py, const int width, const int height, vector<i
 
 }
 
-/// follow the leader? one or a dozen 'flyers' take a path, everyone else flocks and take the path? 
-// centroids?
 png::image<png::rgb_pixel> tonemap(const int width, const int height, int max_val, float gamma, vector<int>&accumulator, const vector<fcolor> & colors){
 	
 	bezier<fcolor> colormap(colors);
-
-	// HDR, with some fudge
+	// Color is also a bezier curve, but it's still a bit messy
 	float max_sample = max(colormap.size() / 2 - 1, 1);
+	// HDR, with some fudge
 	float max_energy = pow(max_val, gamma);
 	png::image<png::rgb_pixel> image(width, height);
 	for (size_t y = 0; y < image.get_height(); ++y)
@@ -136,6 +136,10 @@ void parse_args(int argc, char* argv[])
 		else if(strcmp("-p", cur)==0)
 		{
 			g_num_pts = atoi(argv[++i]);
+		}
+		else if(strcmp("--circle", cur)==0)
+		{
+			// change renderer
 		}
 		else {
 			cout<<"Could not parse " <<cur<<endl;
