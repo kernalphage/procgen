@@ -24,6 +24,8 @@ long g_seed = 0;
 float g_supersample = 1.5f;
 float g_gamma = .85f;
 
+float g_amplitude = .029f;
+float g_dt=0.00001;
 template<typename T, typename T1, typename T2> 
 bool oob(const T t,const T1 lower,const T2 upper)
 {
@@ -46,7 +48,7 @@ void render_spline(const bezier<T> &b, int width, int height, vector<int> &accum
 		
 		int pixels_in_curve = curve_len * ishwidth * g_supersample; 
 		pixels_in_curve = min(pixels_in_curve, width * 10);
-
+		pixels_in_curve = max(pixels_in_curve, 1);
 		float dt = 1.0f / pixels_in_curve;  // might need fudge
 		for(float t= 0; t < 1; t += dt)
 		{
@@ -139,9 +141,22 @@ void parse_args(int argc, char* argv[])
 		{
 			g_num_pts = atoi(argv[++i]);
 		}
-		else if(strcmp("--circle", cur)==0)
+		else if(strcmp("-a", cur)==0)
 		{
-			// change renderer
+			g_amplitude = atof(argv[++i]);
+		}
+		else if(strcmp("--ppp", cur)==0)
+		{
+			g_supersample = atof(argv[++i]);
+		}
+		else if(strcmp("-t", cur)==0)
+		{
+			movers::g_t = atof(argv[++i]);
+		}
+		else if(strcmp("--dt", cur)==0)
+		{
+			cout<<"--dt"<<endl;
+			g_dt = atof(argv[++i]);
 		}
 		else {
 			cout<<"Could not parse " <<cur<<endl;
@@ -176,17 +191,10 @@ int main(int ac, char* av[])
 		return i + dp;
 	};
 
-	float movescale = .029f;
-	float base_energy = .25f;
-	auto smoke_rise = movers::smoke_rise(base_energy, movescale);
-	float falloff = 30.f;
+	float base_energy = .05f;
+	auto smoke_rise = movers::smoke_rise(g_dt, g_amplitude);
+	//float falloff = 30.f;
 
-	auto center_out = [=](icomplex i){
-		float dist = 1/(falloff * abs(i.real())+1);
-		auto norm = (i + icomplex(1,1) )* 500.0f ;
-		icomplex dp = movescale * icomplex(rando::next_position(norm, 1), rando::next_position(norm,100));
-		return i + dp;
-	};
     bezier<icomplex> b = bezier<icomplex>( pts );
 
    ////Rendering begins
@@ -201,25 +209,15 @@ int main(int ac, char* av[])
 	for(int i=0; i < g_iterations; i++)
 	{
 		render_spline(b, width, height, accumulator);
-		b.jiggle(center_out);
+		movers::g_t+= g_dt;
+		b.jiggle(smoke_rise);
 		if( (i % stepsize)  == 0)
 		{
 			cout<<"#"; cout.flush();
 		} 
 	}
 	cout<<"]"<<endl;
-    /*
-    int density = 15;
-    for(int i=0; i < width; i += density)
-    {
-    	for(int j=0; j < height; j+=density)
-	 	{
-	 		render_particle(i,j,width,height, accumulator);
-		}
-	}
-	*/
-
-	// Tone mapping 
+   	// Tone mapping 
 	vector<fcolor> fcolors{
 		{  0.f,   0.f,   0.f},
 		{255.f, 20.f,   0.f},
@@ -261,7 +259,7 @@ int main(int ac, char* av[])
     std::fstream log_handle;
     log_handle.open("output/log.txt",ios::app|ios::out);
 
-	auto params = make_tuple(std::string(buf),width,height,g_seed,g_iterations,(int)g_num_pts,g_gamma, elapsed_seconds.count() );
+	auto params = make_tuple(std::string(buf),width,height,g_seed,g_iterations,(int)g_num_pts,g_gamma,g_amplitude,movers::g_t, g_dt, elapsed_seconds.count() );
 	helper::print_tuple(log_handle, params);
 	log_handle<<endl;
 }
