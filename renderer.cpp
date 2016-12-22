@@ -24,7 +24,6 @@ long g_seed = 0;
 float g_supersample = 1.5f;
 float g_gamma = .85f;
 
-
 template<typename T, typename T1, typename T2> 
 bool oob(const T t,const T1 lower,const T2 upper)
 {
@@ -44,7 +43,10 @@ void render_spline(const bezier<T> &b, int width, int height, vector<int> &accum
 	{
 		// for each (0,1) curve, plot one per pixel
 		float curve_len = bezier<icomplex>::arc_length(b, i);
+		
 		int pixels_in_curve = curve_len * ishwidth * g_supersample; 
+		pixels_in_curve = min(pixels_in_curve, width * 10);
+
 		float dt = 1.0f / pixels_in_curve;  // might need fudge
 		for(float t= 0; t < 1; t += dt)
 		{
@@ -168,20 +170,21 @@ int main(int ac, char* av[])
 	};
 	std::generate(pts.begin(), pts.end(), circular);
 
-	auto jiggle_height = [](icomplex i){
+	auto jiggle_height = [=](icomplex i){
 		float height = 1 - (i.imag() + 1) / 2.0f + .0001;
-		icomplex dp = .01f * height * rando::next_range() * polar(rando::next_range(), rando::next_unit());
+		icomplex dp = .01f * height * rando::next_position(i.real(), i.imag(), 2.0f) * polar(rando::next_range(), rando::next_unit());
 		return i + dp;
 	};
 
-
-	float movescale = .1;//.029f;
+	float movescale = .029f;
 	float base_energy = .25f;
 	auto smoke_rise = movers::smoke_rise(base_energy, movescale);
 	float falloff = 30.f;
+
 	auto center_out = [=](icomplex i){
 		float dist = 1/(falloff * abs(i.real())+1);
-		icomplex dp = movescale * dist  * icomplex(rando::next_range(), rando::next_range());
+		auto norm = (i + icomplex(1,1) )* 500.0f ;
+		icomplex dp = movescale * icomplex(rando::next_position(norm, 1), rando::next_position(norm,100));
 		return i + dp;
 	};
     bezier<icomplex> b = bezier<icomplex>( pts );
@@ -192,23 +195,19 @@ int main(int ac, char* av[])
     start = std::chrono::system_clock::now();
 
    vector<int> accumulator(width*height, 0);
-
 	cout<<"["; cout.flush();
 	int stepsize = max(1, (g_iterations / 100));
 	///// Simulation phase
 	for(int i=0; i < g_iterations; i++)
 	{
 		render_spline(b, width, height, accumulator);
-		b.jiggle(jiggle_height);
+		b.jiggle(center_out);
 		if( (i % stepsize)  == 0)
 		{
 			cout<<"#"; cout.flush();
 		} 
 	}
 	cout<<"]"<<endl;
-    
-
-    // functional pixels?
     /*
     int density = 15;
     for(int i=0; i < width; i += density)
