@@ -7,6 +7,7 @@ procedural generation project(s?)
 ## Dependencies
 
 Currently, the only dependency is a c++14 compliant compiler and [png++](http://www.nongnu.org/pngpp/)
+(Should Just Work(tm) with some flavor of ``sudo apt-get install libpng++-dev``) 
 
 ## TODO:
 
