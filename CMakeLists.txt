@@ -23,7 +23,7 @@ include_directories(refs /usr/include/libpng12 /usr/include/png++)
 find_library(LIBPNG png12)
 
 
-set(CMAKE_CXX_FLAGS_RELEASE "-O3 -DNDEBUG")
+set(CMAKE_CXX_FLAGS_RELEASE "-Ofast -DNDEBUG")
 
 add_executable(procgen ${SOURCE_FILES})
 target_link_libraries(procgen PUBLIC ${LIBPNG})

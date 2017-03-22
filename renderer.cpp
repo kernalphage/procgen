@@ -86,26 +86,26 @@ tonemap(const int width, const int height, int max_val, float gamma, vector<int>
 void parse_args(int argc, char *argv[]) {
     for (int i = 1; i < argc; i++) {
         auto cur = argv[i];
-        if (strcmp("-d", cur) == 0) {
+        if (strcmp("-d", cur) == 0) {         // Dimensions
             width = atoi(argv[++i]);
             height = atoi(argv[++i]);
-        } else if (strcmp("-s", cur) == 0) {
+        } else if (strcmp("-s", cur) == 0) {  // seed
             g_seed = atol(argv[++i]);
-        } else if (strcmp("-i", cur) == 0) {
+        } else if (strcmp("-i", cur) == 0) {   // Iterations
             g_iterations = atoi(argv[++i]);
-        } else if (strcmp("-g", cur) == 0) {
-            g_gamma = atof(argv[++i]);
-        } else if (strcmp("-p", cur) == 0) {
-            g_num_pts = atoi(argv[++i]);
-        } else if (strcmp("-a", cur) == 0) {
-            g_amplitude = atof(argv[++i]);
-        } else if (strcmp("--ppp", cur) == 0) {
-            g_supersample = atof(argv[++i]);
-        } else if (strcmp("-t", cur) == 0) {
-            movers::g_t = atof(argv[++i]);
-        } else if (strcmp("--dt", cur) == 0) {
+        } else if (strcmp("-g", cur) == 0) {    // Gamma
+            g_gamma = (float) atof(argv[++i]);
+        } else if (strcmp("-p", cur) == 0) {    // control points
+            g_num_pts = (size_t) atoi(argv[++i]);
+        } else if (strcmp("-a", cur) == 0) {    // Amplitude
+            g_amplitude = (float) atof(argv[++i]);
+        } else if (strcmp("--ppp", cur) == 0) {     // points per pixel
+            g_supersample = (float) atof(argv[++i]);
+        } else if (strcmp("-t", cur) == 0) {        // animation time??
+            movers::g_t = (float) atof(argv[++i]);
+        } else if (strcmp("--dt", cur) == 0) {      // delta_time
             cout << "--dt" << endl;
-            g_dt = atof(argv[++i]);
+            g_dt = (float) atof(argv[++i]);
         } else {
             cout << "Could not parse " << cur << endl;
         }
@@ -139,8 +139,8 @@ int main(int ac, char *av[]) {
         return ic + dp;
     };
 
-    float move_scale = .029f;
-    float base_energy = .25f; // .05f;
+    float move_scale = g_amplitude;
+    float base_energy = .09f; // .05f;
     auto smoke_rise = movers::smoke_rise(base_energy, move_scale);
     float falloff = 30.f;
 
@@ -165,7 +165,7 @@ int main(int ac, char *av[]) {
     for (int i = 0; i < g_iterations; i++) {
         render_spline(b, width, height, accumulator);
         movers::g_t += g_dt;
-        b.jiggle(center_out);
+        b.jiggle(smoke_rise);
         if ((i % stepsize) == 0) {
             cout << "#";
             cout.flush();
