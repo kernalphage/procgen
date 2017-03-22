@@ -23,7 +23,7 @@ namespace movers
 		return [=](icomplex i){
 		float dist = 1/(falloff * abs(i.real())+1);
 		auto norm = (i + icomplex(1,1) )* 500.0f ;
-		icomplex dp = movescale * dist * icomplex(rando::next_position(norm, 1,g_t), rando::next_position(norm,100,g_t));
+		icomplex dp = movescale * dist * icomplex(rando::next_position(norm, 1), rando::next_position(norm, 100));
 		return i + dp;
 	};
 	}

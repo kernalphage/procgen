@@ -191,18 +191,25 @@ int main(int ac, char* av[])
 		return i + dp;
 	};
 
-	float base_energy = .05f;
-	auto smoke_rise = movers::smoke_rise(g_dt, g_amplitude);
-	//float falloff = 30.f;
+	float movescale = .029f;
+	float base_energy = .25f; // .05f;
+	auto smoke_rise = movers::smoke_rise(base_energy, movescale);
+	float falloff = 30.f;
 
-    bezier<icomplex> b = bezier<icomplex>( pts );
+    auto center_out = [=](icomplex i) {
+        float dist = 1 / (falloff * abs(i.real()) + 1);
+        auto norm = (i + icomplex(1, 1)) * 500.0f;
+        icomplex dp = movescale * icomplex(rando::next_position(norm, 1), rando::next_position(norm, 100));
+        return i + dp;
+    };
+    bezier<icomplex> b = bezier<icomplex>(pts);
 
    ////Rendering begins
    //
     std::chrono::time_point<std::chrono::system_clock> start,end;
     start = std::chrono::system_clock::now();
 
-   vector<int> accumulator(width*height, 0);
+    vector<int> accumulator(width*height, 0);
 	cout<<"["; cout.flush();
 	int stepsize = max(1, (g_iterations / 100));
 	///// Simulation phase
@@ -210,14 +217,15 @@ int main(int ac, char* av[])
 	{
 		render_spline(b, width, height, accumulator);
 		movers::g_t+= g_dt;
-		b.jiggle(smoke_rise);
+		b.jiggle(center_out);
 		if( (i % stepsize)  == 0)
 		{
 			cout<<"#"; cout.flush();
 		} 
 	}
 	cout<<"]"<<endl;
-   	// Tone mapping 
+
+	// Tone mapping 
 	vector<fcolor> fcolors{
 		{  0.f,   0.f,   0.f},
 		{255.f, 20.f,   0.f},
@@ -249,7 +257,7 @@ int main(int ac, char* av[])
 
 	std::cout << "finished computation at " << std::ctime(&end_time)
               << "elapsed time: " << elapsed_seconds.count() << "s\n";
-	const char*  fmt = "output/output_%h%d_%H-%M-%S.png";
+	const char*  fmt = "output_%h%d_%H-%M-%S.png";
 	char buf[80];
 	struct tm* timeinfo;
 	timeinfo = localtime(& end_time);
@@ -257,7 +265,7 @@ int main(int ac, char* av[])
 	image.write(buf);
 
     std::fstream log_handle;
-    log_handle.open("output/log.txt",ios::app|ios::out);
+    log_handle.open("log.txt",ios::app|ios::out);
 
 	auto params = make_tuple(std::string(buf),width,height,g_seed,g_iterations,(int)g_num_pts,g_gamma,g_amplitude,movers::g_t, g_dt, elapsed_seconds.count() );
 	helper::print_tuple(log_handle, params);

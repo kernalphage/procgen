@@ -10,7 +10,7 @@ const float pi = std::acos(-1);
     std::weibull_distribution<> d{1,1.5};
     std::uniform_real_distribution<float> u{0.0f,2*pi};
     std::uniform_real_distribution<float> out{-1,1.0f};
-    gnd::gradient_noise<float,4> chaos_dimension;
+    gnd::gradient_noise<float,3> chaos_dimension;
 
     template< class Sseq > 
     Sseq init_rand(Sseq seed)
@@ -23,15 +23,13 @@ const float pi = std::acos(-1);
 	gen.seed(seed);
 	return seed;
     }
-    float next_position(icomplex xy,float t, float r)
+    float next_position(icomplex xy,float t)
     {
-		return out(gen);
-	  //  return chaos_dimension({xy.real(), xy.imag(),t,r});
+	    return out(gen);
     }
-    float next_position(const float x,const float y,const float t =0, const float r=0)
+    float next_position(const float x,const float y,const float t =0)
     {
 		return out(gen);
-	//return chaos_dimension({x,y,t,r});
     }
     float next_smooth()
     {
