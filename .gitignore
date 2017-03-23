@@ -3,3 +3,8 @@ output_*.jpg
 output_*.png
 output/
 renderer
+
+# Cmake and clion ignore files
+cmake-build-*
+workspace.xml
+tasks.xml
