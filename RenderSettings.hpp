@@ -32,6 +32,8 @@ struct render_settings {
         return false;
 
     }
+    // Getters
+
     int getIterations() const {
         return iterations;
     }
@@ -64,10 +66,17 @@ struct render_settings {
         return gamma;
     }
 
+    point_modifier getJitter() const {
+        return pmod;
+    }
+    point_generator getGenerator() const{
+        return gen;
+    }
     const std::vector<fcolor> &getColors() const {
         return colors;
     }
 
+    // Setters
     void setGenerator(point_generator gen){
         need_render = true;
         render_settings::gen = gen;
@@ -77,67 +86,71 @@ struct render_settings {
         pmod = mod;
     }
 
-    point_modifier getJitter() const {
-        return pmod;
-    }
-    point_generator getGenerator() const{
-        return gen;
-    }
 
     void setAmplitude(float amplitude) {
-        need_render = true;
+        if(amplitude != render_settings::amplitude)
+            need_render = true;
         render_settings::amplitude = amplitude;
     }
 
     void setIterations(int iterations) {
-        need_render = true;
+        if(iterations != render_settings::iterations)
+            need_render = true;
         render_settings::iterations = iterations;
     }
 
-
     void setDt(float dt) {
-        need_render = true;
+        if(dt != render_settings::dt)
+            need_render = true;
         render_settings::dt = dt;
     }
 
     void setWidth(int width) {
-        need_render = true;
+        if(width != render_settings::width)
+            need_render = true;
         render_settings::width = width;
     }
 
 
 
     void setHeight(int height) {
-        need_render = true;
+        if(height != render_settings::height)
+            need_render = true;
         render_settings::height = height;
     }
 
 
     void setNum_pts(std::size_t num_pts) {
-        need_render = true;
+        if(num_pts != render_settings::num_pts)
+            need_render = true;
         render_settings::num_pts = num_pts;
     }
 
 
     void setSeed(long seed) {
-        need_render = true;
+        if(seed != render_settings::seed)
+            need_render = true;
         render_settings::seed = seed;
     }
 
     void setSupersample(float supersample) {
-        need_render = true;
+        if(supersample != render_settings::supersample)
+            need_render = true;
         render_settings::supersample = supersample;
     }
 
 
     void setGamma(float gamma) {
-        need_tonemap = true;
+        if(gamma != render_settings::gamma)
+            need_tonemap = true;
         render_settings::gamma = gamma;
     }
 
 
     void setColors(const std::vector<fcolor> &colors) {
-        need_tonemap = true;
+        if(colors != render_settings::colors)
+            need_tonemap = true;
+
         render_settings::colors = colors;
     }
 

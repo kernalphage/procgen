@@ -15,7 +15,9 @@ public:
         ret.b = this->b + b.b;
         return ret;
     }
-
+    bool operator==(const fcolor& other) const{
+        return (r == other.r) && (b == other.r) && (g == other.g);
+    }
     // Overload + operator to add two fcolor objects.
     fcolor operator*(const float b) const{
         fcolor ret;
