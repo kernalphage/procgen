@@ -30,11 +30,10 @@ set(GUI_SOURCES
         refs/imgui/stb_textedit.h
         refs/imgui/stb_truetype.h
 
-        refs/gl3w/GL/gl3w.c
+        refs/imgui/examples/libs/gl3w/GL/gl3w.c
 
-
-        imgui_impl_glfw_gl3.h
-        imgui_impl_glfw_gl3.cpp
+        refs/imgui/examples/opengl3_example/imgui_impl_glfw_gl3.h
+        refs/imgui/examples/opengl3_example/imgui_impl_glfw_gl3.cpp
         gui_main.cpp )
 
 
@@ -43,8 +42,9 @@ include_directories(refs
         /usr/include/libpng12
         /usr/include
         /usr/include/png++
-        refs/glfw
-        refs/gl3w
+        refs/imgui/examples/libs/glfw
+        refs/imgui/examples/libs/gl3w
+        refs/imgui/examples/opengl3_example
         refs/imgui
         )
 find_library(LIBPNG png12)
