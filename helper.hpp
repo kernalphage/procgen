@@ -5,6 +5,11 @@
 
 namespace helper {
 
+    template<typename T, typename T1, typename T2>
+    bool oob(const T t, const T1 lower, const T2 upper) {
+        return t < lower || t > upper;
+    }
+
 // helper function to print_tuple a tuple of any size
     template<class Tuple, std::size_t N>
     struct TuplePrinter {

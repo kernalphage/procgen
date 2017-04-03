@@ -1,42 +1,45 @@
-#pragma once
-
-#include <gradient_noise/gradient_noise.hpp>
+#ifndef PROCGEN_RANDO_HPP
+#define PROCGEN_RANDO_HPP
+#include <random>
 #include <complex>
 
-namespace rando {
+struct rando {
     using icomplex = std::complex<float>;
-    const float pi = std::acos(-1);
-    std::random_device rd;
-    std::mt19937 gen;
-    std::weibull_distribution<> d{1, 1.5};
-    std::uniform_real_distribution<float> u{0.0f, 2 * pi};
-    std::uniform_real_distribution<float> out{-1, 1.0f};
-    gnd::gradient_noise<float, 3> chaos_dimension;
+    static const constexpr float pi = 3.1415f;
+    static std::random_device rd;
+    static std::mt19937 gen;
+    static std::weibull_distribution<float> d;
+    static std::uniform_real_distribution<float> u;
+    static std::uniform_real_distribution<float> out;
 
     template<class Sseq>
-    Sseq init_rand(Sseq seed) {
+    static Sseq init_rand(Sseq seed) {
         if (seed == 0) {
             seed = rd();
         }
-        chaos_dimension.seed(seed);
         gen.seed(seed);
+
+        d = std::weibull_distribution<float>{1, 1.5f};
+        u = std::uniform_real_distribution<float>{0.0f, 2 * pi};
+        out = std::uniform_real_distribution<float>{-1, 1.0f};
         return seed;
     }
 
-    float next_position(icomplex xy, float t) {
+    static float next_position(icomplex xy, float t) {
         return out(gen);
     }
 
-    float next_position(const float x, const float y, const float t = 0) {
+    static float next_position(const float x, const float y, const float t = 0) {
         return out(gen);
     }
 
-    float next_unit() {
+    static float next_unit() {
         return u(gen);
     }
 
-    float next_range() {
+    static float next_range() {
         return out(gen);
     }
-}
+};
 
+#endif // PROCGEN_RANDO_HPP

@@ -1,4 +1,5 @@
-#pragma once
+#ifndef PROCGEN_FCOLOR_HPP
+#define PROCGEN_FCOLOR_HPP
 
 #include "png++/png.hpp"
 
@@ -16,7 +17,7 @@ public:
     }
 
     // Overload + operator to add two fcolor objects.
-    fcolor operator*(const float b) {
+    fcolor operator*(const float b) const{
         fcolor ret;
         ret.r = this->r * b;
         ret.g = this->g * b;
@@ -35,10 +36,12 @@ public:
     float r, g, b;
 };
 
-fcolor operator*(const float &b, const fcolor &a) {
+inline fcolor operator*(const float &b, const fcolor &a){
     fcolor ret;
     ret.r = a.r * b;
     ret.g = a.g * b;
     ret.b = a.b * b;
     return ret;
 }
+
+#endif //PROCGEN_FCOLOR_HPP

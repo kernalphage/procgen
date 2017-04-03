@@ -17,7 +17,7 @@ set(SOURCE_FILES
         rando.hpp
         README.md
         renderer.cpp
-        )
+        JitterRenderer.cpp JitterRenderer.hpp rando.cpp.cpp)
 
 include_directories(refs /usr/include/libpng12 /usr/include/png++)
 find_library(LIBPNG png12)
