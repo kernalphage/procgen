@@ -5,8 +5,6 @@ set(CMAKE_CXX_STANDARD 14)
 
 
 set(COMMON_SOURCES
-        refs/gradient_noise/gradient_noise.cpp
-        refs/gradient_noise/gradient_noise.hpp
         bezier.hpp
         fcolor.hpp
         helper.hpp
@@ -38,6 +36,7 @@ set(GUI_SOURCES
 
 
 # If you have trouble, it's probably because these libraries aren't installed
+# Libpng glfw glew maybe?
 include_directories(refs
         /usr/include/libpng12
         /usr/include
