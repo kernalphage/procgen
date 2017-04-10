@@ -1,0 +1,27 @@
+ul{
+	display:flex;
+	flex-wrap:wrap;
+	justify-content:space-around;
+	list-style:none;
+}
+
+li{
+	width: 25%;
+	min-width:15em;
+	margin:0;
+	padding:0;
+	margin-bottom: 2em;
+}
+.spiral_item{
+	
+	display:flex;
+	flex-direction: column;
+	align-items: center;
+	justify-content:center;
+	margin:0;
+	padding:0;
+
+}
+li img{
+	width:80%;
+}

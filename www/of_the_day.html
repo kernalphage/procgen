@@ -1,0 +1,22 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Past Doodles!</title>
+    <link rel="stylesheet" type="text/css" href="spirals.css">
+</head>
+
+    <body>
+        <h1>Previous Doodles</h1>
+        <ul>
+            {% for img in images %}
+                <li class="spiral_item">
+                <div>
+                <a href="{{img[0]}}"  >
+                    <img src="{{img[0]}}" />
+                </a>
+                </div>
+                </li>
+            {% endfor %}
+        </ul>
+    </body>
+</html>
