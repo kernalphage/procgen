@@ -59,3 +59,8 @@ target_link_libraries(procgen PUBLIC ${LIBPNG})
 target_link_libraries(gui PUBLIC ${GLFW})
 target_link_libraries(gui PUBLIC ${LDL})
 target_link_libraries(gui PUBLIC    ${LGL})
+
+
+# shaders!
+configure_file(shaders/frag.glsl ${CMAKE_CURRENT_BINARY_DIR}/shaders/frag.glsl COPYONLY)
+configure_file(shaders/vert.glsl ${CMAKE_CURRENT_BINARY_DIR}/shaders/vert.glsl COPYONLY)

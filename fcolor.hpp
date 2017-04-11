@@ -29,9 +29,9 @@ public:
 
     explicit operator png::rgb_pixel() {
         unsigned char _r, _g, _b;
-        _r = min<unsigned char>(255, max<unsigned char>(0, r));
-        _g = min<unsigned char>(255, max<unsigned char>(0, g));
-        _b = min<unsigned char>(255, max<unsigned char>(0, b));
+        _r = std::min<unsigned char>(255, std::max<unsigned char>(0, r));
+        _g = std::min<unsigned char>(255, std::max<unsigned char>(0, g));
+        _b = std::min<unsigned char>(255, std::max<unsigned char>(0, b));
         return png::rgb_pixel{_r, _g, _b};
     }
 

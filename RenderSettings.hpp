@@ -8,9 +8,11 @@
 #include <algorithm>
 #include <complex>
 #include <chrono>
+#include <functional>
 #include "RenderSettings.hpp"
 #include "helper.hpp"
 
+using namespace std;
 
 using icomplex = complex<float>;
 using point_generator = std::function<icomplex(int,int)>;
@@ -52,7 +54,7 @@ struct render_settings {
     int getHeight() const {
         return height;
     }
-    std::size_t getNum_pts() const {
+    int getNum_pts() const {
         return num_pts;
     }
 
@@ -77,6 +79,9 @@ struct render_settings {
     }
 
     // Setters
+
+
+//    todo-matt selectors for generator functions
     void setGenerator(point_generator gen){
         need_render = true;
         render_settings::gen = gen;
@@ -120,7 +125,7 @@ struct render_settings {
     }
 
 
-    void setNum_pts(std::size_t num_pts) {
+    void setNum_pts(int num_pts) {
         if(num_pts != render_settings::num_pts)
             need_render = true;
         render_settings::num_pts = num_pts;
@@ -165,14 +170,15 @@ struct render_settings {
         return need_render;
     }
 
-private:
+
+
 
     int iterations = 2900;
     float amplitude = .029f;
     float dt = 0.00001;
     int width = 4096;
     int height = 2160;
-    std::size_t num_pts = 180;
+    int num_pts = 180;
     long seed = 0;
     float supersample = 1.5f;
     float gamma = .85f;

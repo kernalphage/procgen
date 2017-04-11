@@ -22,6 +22,10 @@ public:
         m_s = settings;
     }
 
+    const int* accumulator(){
+        return m_accumulator.data();
+    }
+
 private:
     void render();
 

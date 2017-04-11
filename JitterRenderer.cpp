@@ -39,13 +39,14 @@ void JitterRenderer::render_spline(const bezier<T> &b, vector<int> &accumulator)
 
 
 png::image<png::rgb_pixel> JitterRenderer::tonemap() {
+    png::image<png::rgb_pixel> image(m_s.getWidth(), m_s.getHeight());
+    return image;
 
     bezier<fcolor> colormap(m_s.getColors());
     // Color is also a bezier curve, but it's still a bit messy
     float max_sample = max(colormap.size() / 2 - 1, 1);
     // HDR, with some fudge
     float max_energy = pow((float) max_val, m_s.getGamma());
-    png::image<png::rgb_pixel> image(m_s.getWidth(), m_s.getHeight());
     for (size_t y = 0; y < image.get_height(); ++y) {
         for (size_t x = 0; x < image.get_width(); ++x) {
             float energy = pow((float) m_accumulator[x + y * m_s.getWidth()], m_s.getGamma()) / max_energy;
