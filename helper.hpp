@@ -2,6 +2,21 @@
 
 #include <ostream>
 #include <tuple>
+#include <glm/vec3.hpp>
+
+struct VertLayout{
+    float x,y,u,v;
+};
+
+struct SplineLayout{
+    glm::vec3 pos;
+};
+
+struct UniformLayout{
+    int gamma;
+    int max_value;
+    int end_color;
+};
 
 namespace helper {
 

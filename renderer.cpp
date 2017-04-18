@@ -1,6 +1,5 @@
 #include <chrono>
 #include <cmath>
-#include <complex>
 #include <iostream>
 #include <algorithm>
 #include "png++/png.hpp"

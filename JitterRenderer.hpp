@@ -6,7 +6,7 @@
 #define PROCGEN_JITTERRENDERER_HPP
 #include "bezier.hpp"
 #include "RenderSettings.hpp"
-
+#include <memory>
 
 class JitterRenderer {
 public:
@@ -26,11 +26,12 @@ public:
         return m_accumulator.data();
     }
 
+    std::unique_ptr<bezier> m_b;
+
 private:
     void render();
 
-    template<typename T>
-    void render_spline(const bezier<T> &b, vector<int> &accumulator);
+    void render_spline(vector<int> &accumulator);
 
     png::image<png::rgb_pixel> tonemap();
     render_settings m_s;

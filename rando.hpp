@@ -1,10 +1,8 @@
 #ifndef PROCGEN_RANDO_HPP
 #define PROCGEN_RANDO_HPP
 #include <random>
-#include <complex>
 
 struct rando {
-    using icomplex = std::complex<float>;
     static const constexpr float pi = 3.1415f;
     static std::random_device rd;
     static std::mt19937 gen;
@@ -25,19 +23,17 @@ struct rando {
         return seed;
     }
 
-    static float next_position(icomplex xy, float t) {
-        return out(gen);
-    }
-
     static float next_position(const float x, const float y, const float t = 0) {
         return out(gen);
     }
 
     static float next_unit() {
+        // 0 to 2pi
         return u(gen);
     }
 
     static float next_range() {
+        // -1 to 1
         return out(gen);
     }
 };

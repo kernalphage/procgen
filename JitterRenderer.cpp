@@ -4,29 +4,31 @@
 
 #include "JitterRenderer.hpp"
 #include "rando.hpp"
+#include <glm/vec3.hpp>
+using namespace glm;
 #include "helper.hpp"
 #include <chrono>
 
-template<typename T>
-void JitterRenderer::render_spline(const bezier<T> &b, vector<int> &accumulator) {
+
+void JitterRenderer::render_spline( vector<int> &accumulator) {
 
 // map -1, 1 to m_s.getWidth(), m_s.getHeight().
 // TODO: worry about aspect ratio
     float ishwidth = m_s.getHeight() * .5f;
-    int curve_count = b.size() / 2 - 1;
+    int curve_count = m_b->size() / 2 - 1;
 
     for (int i = 0; i < curve_count; i++) {
 // for each (0,1) curve, plot one per pixel
-        float curve_len = bezier<icomplex>::arc_length(b, i);
+        float curve_len = m_b->arc_length(i);
 
         int pixels_in_curve = curve_len * ishwidth  * m_s.getSupersample();
-        pixels_in_curve = min(pixels_in_curve, m_s.getWidth() * 10);
-        pixels_in_curve = max(pixels_in_curve, 1);
+        pixels_in_curve = std::min(pixels_in_curve, m_s.getWidth() * 10);
+        pixels_in_curve = std::max(pixels_in_curve, 1);
         float dt = 1.0f / pixels_in_curve;  // might need fudge
         for (float t = 0; t < 1; t += dt) {
-            icomplex j = b.sample(i + t);
-            int ex = (int) (j.real() * ishwidth  + m_s.getWidth() / 2);
-            int wy = (int) (j.imag() * ishwidth  + m_s.getHeight() / 2);
+            vec3 j = m_b->sample(i + t);
+            int ex = (int) (j.x * ishwidth  + m_s.getWidth() / 2);
+            int wy = (int) (j.y * ishwidth  + m_s.getHeight() / 2);
 
             if (helper::oob(ex, 0, m_s.getWidth() - 1) || helper::oob(wy, 0, m_s.getHeight() - 1)) {
                 continue;
@@ -42,6 +44,8 @@ png::image<png::rgb_pixel> JitterRenderer::tonemap() {
     png::image<png::rgb_pixel> image(m_s.getWidth(), m_s.getHeight());
     return image;
 
+
+    /*
     bezier<fcolor> colormap(m_s.getColors());
     // Color is also a bezier curve, but it's still a bit messy
     float max_sample = max(colormap.size() / 2 - 1, 1);
@@ -56,6 +60,7 @@ png::image<png::rgb_pixel> JitterRenderer::tonemap() {
         }
     }
     return image;
+     */
 }
 
 void JitterRenderer::render() {
@@ -64,27 +69,27 @@ void JitterRenderer::render() {
     cout << "Seeding with " << m_s.getSeed() << endl;
 
     // Generate base model
-    vector<icomplex> pts(m_s.getNum_pts());
+    vector<vec3> pts(m_s.getNum_pts());
     for(int i=0; i < pts.size(); i++){
         pts[i] = m_s.getGenerator()(i, pts.size());
     }
 
 
-    bezier<icomplex> b = bezier<icomplex>(pts);
+    m_b = make_unique<bezier>(pts);
     // Reset canvas
     m_accumulator.resize( m_s.getWidth() * m_s.getHeight() );
     std::fill(m_accumulator.begin(), m_accumulator.end(), 0);
 
     cout << "[";
     cout.flush();
-    int stepsize = max(1, (m_s.getIterations() / 100));
+    int stepsize = std::max(1, (m_s.getIterations() / 100));
     auto jitter = m_s.getJitter();
 
     // Simulation phase
     for (int i = 0; i < m_s.getIterations(); i++) {
-        render_spline(b, m_accumulator);
+        render_spline( m_accumulator);
         //movers::g_t += m_s.getDt();
-        b.jiggle( jitter );
+        m_b->jiggle( jitter );
         if ((i % stepsize) == 0) {
             cout << "#";
             cout.flush();

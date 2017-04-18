@@ -32,7 +32,10 @@ set(GUI_SOURCES
 
         refs/imgui/examples/opengl3_example/imgui_impl_glfw_gl3.h
         refs/imgui/examples/opengl3_example/imgui_impl_glfw_gl3.cpp
-        gui_main.cpp )
+        gui_main.cpp
+        Material.cpp
+        Material.hpp
+        )
 
 
 # If you have trouble, it's probably because these libraries aren't installed
@@ -47,7 +50,8 @@ include_directories(refs
         refs/imgui
         )
 find_library(LIBPNG png12)
-find_library(GLFW glfw3 REQUIRED)
+find_package(PkgConfig REQUIRED)
+pkg_search_module(GLFW REQUIRED glfw3)
 find_library(LGL GL)
 find_library(LDL dl)
 
@@ -56,11 +60,14 @@ set(CMAKE_CXX_FLAGS_RELEASE "-Ofast -DNDEBUG")
 add_executable(procgen ${COMMON_SOURCES} ${PROCGEN_SOURCES})
 add_executable(gui     ${COMMON_SOURCES} ${GUI_SOURCES})
 target_link_libraries(procgen PUBLIC ${LIBPNG})
-target_link_libraries(gui PUBLIC ${GLFW})
+target_link_libraries(gui PUBLIC ${GLFW_LIBRARIES})
 target_link_libraries(gui PUBLIC ${LDL})
-target_link_libraries(gui PUBLIC    ${LGL})
+target_link_libraries(gui PUBLIC ${LGL})
 
 
 # shaders!
-configure_file(shaders/frag.glsl ${CMAKE_CURRENT_BINARY_DIR}/shaders/frag.glsl COPYONLY)
-configure_file(shaders/vert.glsl ${CMAKE_CURRENT_BINARY_DIR}/shaders/vert.glsl COPYONLY)
+configure_file(shaders/twotris_frag.glsl ${CMAKE_CURRENT_BINARY_DIR}/shaders/twotris_frag.glsl COPYONLY)
+configure_file(shaders/twotris_vert.glsl ${CMAKE_CURRENT_BINARY_DIR}/shaders/twotris_vert.glsl COPYONLY)
+
+configure_file(shaders/spline_frag.glsl ${CMAKE_CURRENT_BINARY_DIR}/shaders/spline_frag.glsl COPYONLY)
+configure_file(shaders/spline_vert.glsl ${CMAKE_CURRENT_BINARY_DIR}/shaders/spline_vert.glsl COPYONLY)

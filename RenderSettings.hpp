@@ -11,12 +11,13 @@
 #include <functional>
 #include "RenderSettings.hpp"
 #include "helper.hpp"
+#include <glm/vec3.hpp>
 
+using namespace glm;
 using namespace std;
 
-using icomplex = complex<float>;
-using point_generator = std::function<icomplex(int,int)>;
-using point_modifier = std::function<icomplex(icomplex)>;
+using point_generator = std::function<vec3(int,int)>;
+using point_modifier = std::function<vec3(vec3)>;
 
 
 struct render_settings {

@@ -2,7 +2,7 @@
 
 in vec2 Texcoord;
 out vec4 outColor;
-uniform isampler2D tex;
+uniform sampler2D tex;
 uniform float gamma;
 uniform float energy;
 uniform vec4 end_color;
@@ -10,8 +10,8 @@ uniform vec4 end_color;
 void main()
 {
     // ivec4 val = texelFetch(tex, uv, 0);
-    ivec4 val = texture(tex, Texcoord);
-    float lum =  pow(val.r, gamma)/energy;
+    vec4 val = texture(tex, Texcoord);
+    vec4 lum =  pow(val, vec4(gamma))/energy;
 
     outColor = lum * end_color;
 }

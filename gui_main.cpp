@@ -3,98 +3,29 @@
 
 #include <imgui.h>
 #include "imgui_impl_glfw_gl3.h"
-#include <stdio.h>
 #include <GL/gl3w.h>    // This example is using gl3w to access OpenGL functions (because it is small). You may use glew/glad/glLoadGen/etc. whatever already works for you.
 #include <GLFW/glfw3.h>
 #include "RenderSettings.hpp"
 #include "JitterRenderer.hpp"
 #include "rando.hpp"
+#include "helper.hpp"
+#include "Material.hpp"
 
 render_settings r;
 const int im_sz = 64;
 constexpr int imDim = im_sz * im_sz;
+JitterRenderer render;
+GLuint spline_vao;
+GLuint splineVBO;
 
 static void error_callback(int error, const char* description)
 {
     fprintf(stderr, "Error %d: %s\n", error, description);
 }
 
-string read_contents(string filename){
-    std::ifstream t(filename);
-    std::string str;
-
-    t.seekg(0, std::ios::end);
-    str.reserve(t.tellg());
-    t.seekg(0, std::ios::beg);
-
-    str.assign((std::istreambuf_iterator<char>(t)),
-            std::istreambuf_iterator<char>());
-    return str;
-}
-
-GLuint create_shader(string filename, GLuint shader_type){
-    auto src = read_contents(filename);
-    const char* c_src = src.c_str(); // makes shader_source easier
-
-    auto shader = glCreateShader(shader_type);
-    glShaderSource(shader, 1, &c_src, nullptr);
-    glCompileShader(shader);
-
-    GLint status;
-    glGetShaderiv(shader, GL_COMPILE_STATUS, &status);
-    if(!status){
-        cout<<"When loading "<<filename<<", code: "<<status;
-        char buffer[512];
-        glGetShaderInfoLog(shader, 512, NULL, buffer);
-        cout<<buffer;
-    }
-    return shader;
-}
-
-struct VertLayout{
-    float x,y,u,v;
-};
-
-struct UniformLayout{
-    GLint gamma;
-    GLint max_value;
-    GLint end_color;
-}  g_layout;
-
 auto two_triangles(void){
 
-    GLuint vao;
-    glGenVertexArrays(1, &vao);
-    glBindVertexArray(vao);
 
-    // Data for those sweet, sweet two triangles
-    VertLayout verts[] = {{ -.9f,  .9f,  0,  1,},
-                          {  .9f,  .9f,  1,  1,},
-                          {  .9f, -.9f,  1,  0,},
-                          { -.9f, -.9f,  0,  0,},};
-    GLuint vbo;
-    glGenBuffers(1, &vbo);
-    glBindBuffer(GL_ARRAY_BUFFER, vbo);
-    glBufferData(GL_ARRAY_BUFFER, sizeof(verts), verts, GL_STATIC_DRAW);
-
-// Textures
-    GLuint tex;
-    glGenTextures(1,&tex);
-    glBindTexture(GL_TEXTURE_2D, tex);
-
-    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
-    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
-
-    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
-    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
-
-
-    /* //float version
-    int i=0;
-    std::generate(pixels.begin(), pixels.end(), [&]{return di * i++;});
-    pixels[0] = 2;
-    glTexImage2D(GL_TEXTURE_2D, 0, GL_RED, im_sz,im_sz ,0, GL_RED, GL_FLOAT, pixels.data());
-     */
 
     render_settings r;
     r.width = 500;
@@ -106,56 +37,77 @@ auto two_triangles(void){
     auto circular = [&] (int cur, int max){
         float di = 3.141 * 2 / (max - 2);
         float theta = di * cur;
-        return icomplex(sin(theta), cos(theta)) * .8f;
+        return vec3(sin(theta), cos(theta), 0) * .8f;
     };
 
-    auto center_out = [=](icomplex i_center) {
-        float dist = 1 / (100 * abs(i_center.real()) + 1);
-        auto norm = (i_center + icomplex(1, 1)) * 500.0f;
-        icomplex dp = dist * icomplex(rando::next_position(norm, 1), rando::next_position(norm, 100));
+    auto center_out = [=](vec3 i_center) {
+        float dist = .01 * ( std::abs(i_center.x) );
+        auto norm = (i_center + vec3(1, 1, 0)) * 500.0f;
+        vec3 dp = dist * vec3(rando::next_range(), rando::next_range(), 0);
         return i_center + dp;
     };
 
+    r.setIterations(2);
     r.setGenerator(circular);
     r.setJitter(center_out);
 
-
-    JitterRenderer render;
     render.setSettings(r);
     render.generate_image();
 
-    glTexImage2D(GL_TEXTURE_2D, 0, GL_R32I, r.width, r.height, 0,
-                 GL_RED_INTEGER, GL_INT, render.accumulator());
+    vector<vec3> s;
+    render.m_b->make_samples(s, 300);
 
-    //Create program
-    auto vert = create_shader("shaders/vert.glsl", GL_VERTEX_SHADER);
-    auto frag = create_shader("shaders/frag.glsl", GL_FRAGMENT_SHADER);
+    glGenVertexArrays(1, &spline_vao);
+    glBindVertexArray(spline_vao);
 
-    auto shader_program = glCreateProgram();
-    glAttachShader(shader_program, vert);
-    glAttachShader(shader_program, frag);
-    glBindFragDataLocation(shader_program, 0, "outColor");
+    glGenBuffers(1, &splineVBO);
+    glBindBuffer(GL_ARRAY_BUFFER, splineVBO);
+    glBufferData(GL_ARRAY_BUFFER, sizeof(vec3) * (s.size()), s.data(), GL_STREAM_DRAW);
 
-    glLinkProgram(shader_program);
-    glUseProgram(shader_program);
+    /*
 
-    // Linking shader attributes to cpp structs
-    GLint posAttrib = glGetAttribLocation(shader_program, "position");
-    glEnableVertexAttribArray(posAttrib);
-    glVertexAttribPointer(posAttrib, 2, GL_FLOAT, GL_FALSE,
-                          sizeof(VertLayout), (void*) offsetof(VertLayout, x));
+    // Data for those sweet, sweet two triangles
+    VertLayout verts[] = {{ -.9f,  .9f,  0,  1,},
+                          {  .9f,  .9f,  1,  1,},
+                          {  .9f, -.9f,  1,  0,},
+                          { -.9f, -.9f,  0,  0,},};
+    GLuint vbo;
+    glGenBuffers(1, &vbo);
+    glBindBuffer(GL_ARRAY_BUFFER, vbo);
+    glBufferData(GL_ARRAY_BUFFER, sizeof(verts), verts, GL_STATIC_DRAW);
+    */
 
-    GLint texAttrib = glGetAttribLocation(shader_program, "texcoord");
-    glEnableVertexAttribArray(texAttrib);
-    glVertexAttribPointer(texAttrib, 2, GL_FLOAT, GL_FALSE,
-                          sizeof(VertLayout), (void*) offsetof(VertLayout, u) );
+// Textures
+    GLuint tex;
+    glGenTextures(1,&tex);
+    glBindTexture(GL_TEXTURE_2D, tex);
 
-    g_layout.gamma = glGetUniformLocation(shader_program, "gamma");
-    g_layout.max_value = glGetUniformLocation(shader_program, "energy");
-    g_layout.end_color = glGetUniformLocation(shader_program, "end_color");
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
 
-    return std::make_tuple(shader_program, vao);
-}
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
+
+    //TwoTriangles t{};
+    //t.setup();
+
+
+    SplineMat m{};
+    m.setup();
+
+
+    /* //float version
+    int i=0;
+    std::generate(pixels.begin(), pixels.end(), [&]{return di * i++;});
+    pixels[0] = 2;
+    glTexImage2D(GL_TEXTURE_2D, 0, GL_RED, im_sz,im_sz ,0, GL_RED, GL_FLOAT, pixels.data());
+     */
+
+    glEnable(GL_BLEND);
+    glBlendFunc(GL_SRC_ALPHA, GL_ONE);
+
+    return m;
+ }
 
 
 int main(int, char**)
@@ -182,9 +134,9 @@ int main(int, char**)
     ImVec4 clear_color = ImColor(114, 144, 154);
 
     cout<<"Can i even cout here?"<<endl;
-    GLuint prog, vao;
 
-    std::tie(prog, vao) = two_triangles();
+    auto tt_prog = two_triangles();
+
     cout<<"Guess I can;"<<endl;
     static float f = 0.5f;
     static int energy = 5000;
@@ -220,23 +172,39 @@ int main(int, char**)
         }
 
 
-        glUniform1f(g_layout.gamma, f);
-        glUniform1f(g_layout.max_value, pow((float)energy, f));
-        glUniform4f(g_layout.end_color, clear_color.x, clear_color.y, clear_color.z, clear_color.w);
+        int num_samples = 400;
+        const int num_discs = 30;
 
-        glClearColor(clear_color.x * .6f, clear_color.y* .6f, clear_color.z* .6f, clear_color.w);
+        vector<vec3> s;
+        for(int i=0; i < num_discs; i++){
+            render.m_b->jiggle(render.getSettings().getJitter());
+            render.m_b->make_samples(s, num_samples);
+        }
+        glBindVertexArray(spline_vao);
+        glBindBuffer(GL_ARRAY_BUFFER, splineVBO);
+        glBufferData(GL_ARRAY_BUFFER, sizeof(vec3) * (s.size()), s.data(), GL_STREAM_DRAW);
+
+        // glUniform1f(tt_prog.layout.gamma, f);
+        // glUniform1f(tt_prog.layout.max_value, pow((float)energy, f));
+        // glUniform4f(tt_prog.layout.end_color, clear_color.x, clear_color.y, clear_color.z, clear_color.w);
+
+        //glClearColor(clear_color.x * .6f, clear_color.y* .6f, clear_color.z* .6f, .01f);
+        //glClear(GL_COLOR_BUFFER_BIT);
 
         // Rendering
         int display_w, display_h;
         glfwGetFramebufferSize(window, &display_w, &display_h);
-        auto dis = min(display_w, display_h);
+
+        auto dis = std::min(display_w, display_h);
+        dis *= .98f;
         glViewport(0, 0, dis, dis);
 
-
-        glClear(GL_COLOR_BUFFER_BIT);
+        int dead_samples = num_samples - 5;
         /* do renderstuff here? */
-        glDrawArrays(GL_TRIANGLE_FAN, 0, 4);
-
+        glPointSize(2);
+        for(int i=0; i < num_discs; i++) {
+            glDrawArrays(GL_POINTS, num_samples * i, dead_samples);
+        }
         ImGui::Render();
         glfwSwapBuffers(window);
     }
