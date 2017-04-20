@@ -64,13 +64,16 @@ class TwoTriangles : public Material{
 public:
     bool setup() override ;
     UniformLayout layout;
+    GLuint vao;
 };
 
 class SplineMat : public Material{
 public:
     bool setup() override ;
+    GLuint colorBuffer;
+    GLuint fbo;
 
-
+    GLuint spline_vao, splineVBO;
 };
 
 

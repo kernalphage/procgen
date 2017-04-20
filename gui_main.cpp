@@ -15,8 +15,10 @@ render_settings r;
 const int im_sz = 64;
 constexpr int imDim = im_sz * im_sz;
 JitterRenderer render;
-GLuint spline_vao;
-GLuint splineVBO;
+
+TwoTriangles t{};
+SplineMat m{};
+
 
 static void error_callback(int error, const char* description)
 {
@@ -24,8 +26,6 @@ static void error_callback(int error, const char* description)
 }
 
 auto two_triangles(void){
-
-
 
     render_settings r;
     r.width = 500;
@@ -37,11 +37,11 @@ auto two_triangles(void){
     auto circular = [&] (int cur, int max){
         float di = 3.141 * 2 / (max - 2);
         float theta = di * cur;
-        return vec3(sin(theta), cos(theta), 0) * .8f;
+        return vec3(sin(theta), cos(theta), 0) * .5f;
     };
 
     auto center_out = [=](vec3 i_center) {
-        float dist = .01 * ( std::abs(i_center.x) );
+        float dist = .01 * ( length(i_center) );
         auto norm = (i_center + vec3(1, 1, 0)) * 500.0f;
         vec3 dp = dist * vec3(rando::next_range(), rando::next_range(), 0);
         return i_center + dp;
@@ -57,26 +57,6 @@ auto two_triangles(void){
     vector<vec3> s;
     render.m_b->make_samples(s, 300);
 
-    glGenVertexArrays(1, &spline_vao);
-    glBindVertexArray(spline_vao);
-
-    glGenBuffers(1, &splineVBO);
-    glBindBuffer(GL_ARRAY_BUFFER, splineVBO);
-    glBufferData(GL_ARRAY_BUFFER, sizeof(vec3) * (s.size()), s.data(), GL_STREAM_DRAW);
-
-    /*
-
-    // Data for those sweet, sweet two triangles
-    VertLayout verts[] = {{ -.9f,  .9f,  0,  1,},
-                          {  .9f,  .9f,  1,  1,},
-                          {  .9f, -.9f,  1,  0,},
-                          { -.9f, -.9f,  0,  0,},};
-    GLuint vbo;
-    glGenBuffers(1, &vbo);
-    glBindBuffer(GL_ARRAY_BUFFER, vbo);
-    glBufferData(GL_ARRAY_BUFFER, sizeof(verts), verts, GL_STATIC_DRAW);
-    */
-
 // Textures
     GLuint tex;
     glGenTextures(1,&tex);
@@ -88,26 +68,37 @@ auto two_triangles(void){
     glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
     glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
 
-    //TwoTriangles t{};
-    //t.setup();
-
-
-    SplineMat m{};
+    t.setup();
     m.setup();
 
 
-    /* //float version
-    int i=0;
-    std::generate(pixels.begin(), pixels.end(), [&]{return di * i++;});
-    pixels[0] = 2;
-    glTexImage2D(GL_TEXTURE_2D, 0, GL_RED, im_sz,im_sz ,0, GL_RED, GL_FLOAT, pixels.data());
-     */
-
-    glEnable(GL_BLEND);
-    glBlendFunc(GL_SRC_ALPHA, GL_ONE);
-
     return m;
  }
+
+
+void sample_curve(    const int num_samples = 200,
+                     const int num_discs = 10)
+{
+
+    vector<vec3> s;
+    for(int i=0; i < num_discs; i++){
+        render.m_b->jiggle(render.getSettings().getJitter());
+        render.m_b->make_samples(s, num_samples);
+    }
+    glBindVertexArray(m.spline_vao);
+    glBindBuffer(GL_ARRAY_BUFFER, m.splineVBO);
+    glBufferData(GL_ARRAY_BUFFER, sizeof(vec3) * (s.size()), s.data(), GL_STATIC_DRAW);
+
+    int dead_samples = num_samples - 5;
+    /* do renderstuff here? */
+    glPointSize(2);
+    for(int i=0; i < num_discs; i++) {
+        glDrawArrays(GL_LINE_STRIP, num_samples * i, dead_samples);
+    }
+    
+    glBindBuffer(GL_ARRAY_BUFFER, 0);
+    glBindVertexArray(0);
+}
 
 
 int main(int, char**)
@@ -127,7 +118,7 @@ int main(int, char**)
     gl3wInit();
 
     // Setup ImGui binding
-    ImGui_ImplGlfwGL3_Init(window, true);
+    //ImGui_ImplGlfwGL3_Init(window, true);
 
     bool show_test_window = true;
     bool show_another_window = false;
@@ -140,77 +131,58 @@ int main(int, char**)
     cout<<"Guess I can;"<<endl;
     static float f = 0.5f;
     static int energy = 5000;
+    static int dis = 0;
+
     // Main loop
     while (!glfwWindowShouldClose(window))
     {
         glfwPollEvents();
 
-        ImGui_ImplGlfwGL3_NewFrame();
 
-        // 1. Show a simple window
-        // Tip: if we don't call ImGui::Begin()/ImGui::End() the widgets appears in a window automatically called "Debug"
-        {
+         glUniform1f(t.layout.gamma, f);
+         glUniform1f(t.layout.max_value, pow((float)energy, f));
+         glUniform4f(t.layout.end_color, clear_color.x, clear_color.y, clear_color.z, clear_color.w);
 
-            ImGui::Text("Hello, world!");
-            ImGui::SliderFloat("gamma", &f, 0.0f, 1.0f);
-            ImGui::SliderInt("energy", &energy, 0, 10000);
-            ImGui::ColorEdit3("clear color", (float*)&clear_color);
-            ImGui::Text("Application average %.3f ms/frame (%.1f FPS)", 1000.0f / ImGui::GetIO().Framerate, ImGui::GetIO().Framerate);
-        }
-
-
-        bool needs_render = false;
-        // spline renderer gui
-        {
-            ImGui::Begin("Render Settings");
-            needs_render |= ImGui::SliderInt("iterations", &(r.iterations), 100, 10000);
-            needs_render |= ImGui::SliderFloat("Amplitude", &(r.amplitude), 0,10);
-            needs_render |= ImGui::SliderInt("Width/Height", &(r.width), 100, 4096);
-            needs_render |= ImGui::SliderInt("Control Points", &(r.num_pts), 5, 200);
-
-            ImGui::End();
-        }
-
-
-        int num_samples = 400;
-        const int num_discs = 30;
-
-        vector<vec3> s;
-        for(int i=0; i < num_discs; i++){
-            render.m_b->jiggle(render.getSettings().getJitter());
-            render.m_b->make_samples(s, num_samples);
-        }
-        glBindVertexArray(spline_vao);
-        glBindBuffer(GL_ARRAY_BUFFER, splineVBO);
-        glBufferData(GL_ARRAY_BUFFER, sizeof(vec3) * (s.size()), s.data(), GL_STREAM_DRAW);
-
-        // glUniform1f(tt_prog.layout.gamma, f);
-        // glUniform1f(tt_prog.layout.max_value, pow((float)energy, f));
-        // glUniform4f(tt_prog.layout.end_color, clear_color.x, clear_color.y, clear_color.z, clear_color.w);
-
-        //glClearColor(clear_color.x * .6f, clear_color.y* .6f, clear_color.z* .6f, .01f);
-        //glClear(GL_COLOR_BUFFER_BIT);
 
         // Rendering
         int display_w, display_h;
         glfwGetFramebufferSize(window, &display_w, &display_h);
 
-        auto dis = std::min(display_w, display_h);
-        dis *= .98f;
-        glViewport(0, 0, dis, dis);
+       //auto newsz = std::min(display_w, display_h);
+       //newsz *= .98f;
+       //if (newsz != dis){
+       //    dis = newsz;
+       //    glClear(GL_COLOR_BUFFER_BIT);
+       //    // TODO: clear the curves?
+       //}
 
-        int dead_samples = num_samples - 5;
-        /* do renderstuff here? */
-        glPointSize(2);
-        for(int i=0; i < num_discs; i++) {
-            glDrawArrays(GL_POINTS, num_samples * i, dead_samples);
-        }
-        ImGui::Render();
+
+        glBindFramebuffer(GL_FRAMEBUFFER, m.fbo);
+
+       // glEnable(GL_BLEND);
+       // glBlendFunc(GL_SRC_ALPHA, GL_DST_ALPHA);
+        glViewport(0,0,500,500);
+        m.activate();
+        sample_curve();
+        glBindFramebuffer(GL_FRAMEBUFFER, 0);
+
+        glViewport(0,0,display_w, display_h);
+        glClearColor(1,0,0,1);
+        glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
+
+        t.activate();
+
+        glActiveTexture(GL_TEXTURE0);
+        glBindTexture(GL_TEXTURE_2D, m.colorBuffer);
+
+        glBindVertexArray(t.vao);
+        glDrawArrays(GL_TRIANGLE_STRIP, 0,4);
+        glBindVertexArray(0);
+
         glfwSwapBuffers(window);
     }
 
     // Cleanup
-    ImGui_ImplGlfwGL3_Shutdown();
     glfwTerminate();
 
     return 0;

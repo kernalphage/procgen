@@ -13,5 +13,6 @@ void main()
     vec4 val = texture(tex, Texcoord);
     vec4 lum =  pow(val, vec4(gamma))/energy;
 
-    outColor = lum * end_color;
+
+    outColor = vec4(val.rg, 1, 1);
 }
