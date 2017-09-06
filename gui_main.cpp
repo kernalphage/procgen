@@ -30,7 +30,7 @@ auto two_triangles(void){
     render_settings r;
     r.width = 500;
     r.height = 500;
-    r.num_pts = 100;
+    r.num_pts = 150;
     r.iterations = 5000;
 
     r.need_render = true;
@@ -76,8 +76,8 @@ auto two_triangles(void){
  }
 
 
-void sample_curve(    const int num_samples = 200,
-                     const int num_discs = 10)
+void sample_curve(    const int num_samples = 1200,
+                     const int num_discs = 20)
 {
 
     vector<vec3> s;
@@ -129,16 +129,17 @@ int main(int, char**)
     auto tt_prog = two_triangles();
 
     cout<<"Guess I can;"<<endl;
-    static float f = 0.5f;
-    static int energy = 5000;
+    static float f = 0.9f;
+    static int energy = 1;
     static int dis = 0;
+    int iters =0;
 
     // Main loop
     while (!glfwWindowShouldClose(window))
     {
         glfwPollEvents();
-
-
+        iters ++;
+        energy = iters * .8f ;
          glUniform1f(t.layout.gamma, f);
          glUniform1f(t.layout.max_value, pow((float)energy, f));
          glUniform4f(t.layout.end_color, clear_color.x, clear_color.y, clear_color.z, clear_color.w);
@@ -148,30 +149,21 @@ int main(int, char**)
         int display_w, display_h;
         glfwGetFramebufferSize(window, &display_w, &display_h);
 
-       //auto newsz = std::min(display_w, display_h);
-       //newsz *= .98f;
-       //if (newsz != dis){
-       //    dis = newsz;
-       //    glClear(GL_COLOR_BUFFER_BIT);
-       //    // TODO: clear the curves?
-       //}
-
-
         glBindFramebuffer(GL_FRAMEBUFFER, m.fbo);
 
-       // glEnable(GL_BLEND);
-       // glBlendFunc(GL_SRC_ALPHA, GL_DST_ALPHA);
         glViewport(0,0,500,500);
+
+        glEnable(GL_BLEND);
         m.activate();
         sample_curve();
         glBindFramebuffer(GL_FRAMEBUFFER, 0);
 
         glViewport(0,0,display_w, display_h);
-        glClearColor(1,0,0,1);
+        glClearColor(0,0,0,1);
         glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 
         t.activate();
-
+        glDisable(GL_BLEND);
         glActiveTexture(GL_TEXTURE0);
         glBindTexture(GL_TEXTURE_2D, m.colorBuffer);
 

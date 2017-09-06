@@ -12,7 +12,7 @@ void main()
     // ivec4 val = texelFetch(tex, uv, 0);
     vec4 val = texture(tex, Texcoord);
     vec4 lum =  pow(val, vec4(gamma))/energy;
+    float t = 0;
 
-
-    outColor = vec4(val.rg, 1, 1);
+    outColor = vec4(lum.rg, gamma , 1);
 }
